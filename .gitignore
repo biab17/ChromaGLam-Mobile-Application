@@ -77,5 +77,8 @@ pnpm-debug.log*
 
 frontend.zip
 
+# Google Cloud Security Key
+backend/src/config
 
+ChromaGLam.zip
 

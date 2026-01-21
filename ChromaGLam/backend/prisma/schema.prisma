@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  user_id    Int         @id @default(autoincrement())
+  username   String      @unique
+  name       String
+  email      String      @unique
+  password   String
+  preference Preference?
+  items      Item[]
+}
+
+model Preference {
+  preference_id   Int      @id @default(autoincrement())
+  style           String
+  preferredColors String[]
+  avoidedColors   String[]
+  thermalComfort  String
+  height          Float
+  proportions     String
+  userId          Int      @unique
+  user            User     @relation(fields: [userId], references: [user_id])
+}
+
+model Item {
+  item_id      Int    @id @default(autoincrement())
+  name         String
+  description  String
+  style        String
+  colors       String
+  season       String
+  thermalLevel String
+  fit          String
+  available    Boolean @default(true)
+  imageURL     String
+  userId       Int
+  user         User   @relation(fields: [userId], references: [user_id])
+}
