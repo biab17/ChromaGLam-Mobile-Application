@@ -13,7 +13,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Register all routes
 registerRoutes(app);
 
 const PORT = process.env.PORT || 4000;

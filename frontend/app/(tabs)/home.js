@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import * as Location from "expo-location";
+import { API_URLS } from '../../config';
 
-const WEATHER_API_KEY = "715327b45d8574f75adcd6e99f743fbf"; 
 
 function generateWeatherTip(weather) {
   if (!weather) return "Enjoy your day!";
@@ -72,7 +72,7 @@ export default function Home() {
       const lat = pos.coords.latitude;
       const lon = pos.coords.longitude;
 
-      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${WEATHER_API_KEY}`;
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_URLS.WEATHER}`;
       const response = await fetch(url);
       const data = await response.json();
 

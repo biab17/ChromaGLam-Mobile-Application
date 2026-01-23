@@ -26,7 +26,7 @@ class ItemRepository {
 
     async updateItemAvailability(itemId, status) {
         return await prisma.item.update({
-            where: { id: itemId },
+            where: { item_id: itemId },
             data: { available: status }
         });
     }

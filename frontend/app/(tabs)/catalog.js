@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { useFocusEffect } from '@react-navigation/native';
+import api from '../../src/api/client'; 
 
 export default function Catalog() {
   const [items, setItems] = useState([]);
@@ -9,14 +10,12 @@ export default function Catalog() {
 
   const fetchItems = async () => {
     try {
-      const token = await SecureStore.getItemAsync('userToken');
-      const response = await fetch('http://172.20.10.4:4000/api/items', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      setItems(Array.isArray(data) ? data : []);
+      setLoading(true);
+      const response = await api.get('/items'); 
+      setItems(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
-      Alert.alert("Error", "Could not load your wardrobe.");
+      console.error("Fetch Error:", error.message);
+      Alert.alert("Error", "Could not load your wardrobe. Check server IP.");
     } finally {
       setLoading(false);
     }
@@ -24,27 +23,21 @@ export default function Catalog() {
 
   useFocusEffect(useCallback(() => { fetchItems(); }, []));
 
-  const handleToggle = async (id, currentStatus) => {
+  const handleToggle = async (itemId, currentStatus) => {
     try {
-      const token = await SecureStore.getItemAsync('userToken');
       const newStatus = !currentStatus;
-
-      const response = await fetch(`http://172.20.10.4:4000/api/items/${id}/toggle`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ available: newStatus })
+      const response = await api.patch(`/items/${itemId}/toggle`, {
+        available: newStatus
       });
 
-      if (response.ok) {
-        setItems(prev => prev.map(item => item.id === id ? { ...item, available: newStatus } : item));
-      } else {
-        Alert.alert("Error", "Failed to update status on server.");
+      if (response.status === 200) {
+        setItems(prev => prev.map(item => 
+          item.item_id === itemId ? { ...item, available: newStatus } : item
+        ));
       }
     } catch (error) {
-      Alert.alert("Connection Error", "Check if the server is running.");
+      console.error("Toggle Error:", error.message);
+      Alert.alert("Error", "Failed to update status on server.");
     }
   };
 
@@ -57,7 +50,7 @@ export default function Catalog() {
         
         <TouchableOpacity 
           style={[styles.statusButton, { backgroundColor: item.available ? '#4CAF50' : '#F44336' }]} 
-          onPress={() => handleToggle(item.id, item.available)}
+          onPress={() => handleToggle(item.item_id, item.available)}
         >
           <Text style={styles.statusText}>
             {item.available ? "Available" : "Unavailable"}
@@ -80,7 +73,7 @@ export default function Catalog() {
       <FlatList
         data={items}
         renderItem={renderItem}
-        keyExtractor={(item, index) => item?.id?.toString() || index.toString()} 
+        keyExtractor={(item) => item.item_id.toString()} 
         numColumns={2}
         contentContainerStyle={styles.scrollList} 
         showsVerticalScrollIndicator={false}
@@ -90,10 +83,15 @@ export default function Catalog() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 10 },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#fff', 
+    paddingHorizontal: 10,
+    paddingBottom: Platform.OS === 'android' ? 70 : 0 
+  },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { fontSize: 28, fontWeight: '800', marginTop: 60, marginBottom: 20, textAlign: 'center', color: '#333' },
-  scrollList: { paddingBottom: 100 }, 
+  scrollList: { paddingBottom: 120 }, 
   card: { flex: 0.5, margin: 8, backgroundColor: '#fff', borderRadius: 20, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, overflow: 'hidden' },
   image: { width: '100%', height: 160, resizeMode: 'cover' },
   content: { padding: 12, alignItems: 'center' },

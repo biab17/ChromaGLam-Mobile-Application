@@ -78,7 +78,8 @@ pnpm-debug.log*
 frontend.zip
 
 # Google Cloud Security Key
-backend/src/config
+backend/src/config/google_cloud_key.json
+
 
 ChromaGLam.zip
 

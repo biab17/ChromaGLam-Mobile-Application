@@ -1,14 +1,20 @@
 import axios from "axios";
-import { Platform } from "react-native";
+import * as SecureStore from 'expo-secure-store';
 
-const BASE_URL =
-  Platform.OS === "android"
-    ? "http://10.0.2.2:4000/api"
-    : "http://172.20.10.4:4000/api"; 
+const BASE_URL = "http://172.20.10.4:4000/api"; 
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 10000,
+  timeout: 40000,
+});
+
+
+api.interceptors.request.use(async (config) => {
+  const token = await SecureStore.getItemAsync('userToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export default api;

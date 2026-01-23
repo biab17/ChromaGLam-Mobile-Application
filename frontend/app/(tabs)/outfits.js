@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Image, Dimensions, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Image, Dimensions, Alert, Platform } from 'react-native';
 import * as Location from "expo-location";
-import * as SecureStore from 'expo-secure-store';
+import api from '../../src/api/client';
+import { API_URLS } from '../../config';
 
 const { width } = Dimensions.get('window');
-const BASE_URL = "http://172.20.10.4:4000/api";
-const WEATHER_API_KEY = "715327b45d8574f75adcd6e99f743fbf";
 
-export default function OutfitsScreen() {
+export default function outfits() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
 
@@ -15,22 +14,36 @@ export default function OutfitsScreen() {
     setLoading(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert("Permission Denied", "Location access is needed.");
+        setLoading(false);
+        return;
+      }
+
       const pos = await Location.getCurrentPositionAsync({});
-      const wRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&units=metric&appid=${WEATHER_API_KEY}`);
+      
+      const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&units=metric&appid=${API_URLS.WEATHER}`;
+      const wRes = await fetch(weatherUrl);
       const wData = await wRes.json();
       
-      const token = await SecureStore.getItemAsync('userToken');
-      const response = await fetch(`${BASE_URL}/outfits`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ weather: { temp: Math.round(wData.main.temp), description: wData.weather[0].description } })
+      if (!wData.main) throw new Error("Weather service unreachable");
+
+      const response = await api.post('/outfits', {
+        weather: { 
+          temp: Math.round(wData.main.temp), 
+          description: wData.weather[0].description 
+        }
       });
 
-      const result = await response.json();
-      if (response.ok) setData(result);
-      else Alert.alert("Error", result.error);
-    } catch (e) { Alert.alert("Connection Error", "Server is down."); } 
-    finally { setLoading(false); }
+      if (response.data) {
+        setData(response.data);
+      }
+    } catch (e) { 
+      console.log("iOS Request Failed:", e.message);
+      Alert.alert("Connection Error", `Details: ${e.message}`); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const renderOutfit = (items) => (
@@ -71,7 +84,12 @@ export default function OutfitsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, backgroundColor: '#fff', padding: 20 },
+  container: { 
+    flexGrow: 1, 
+    backgroundColor: '#fff', 
+    padding: 20,
+    paddingBottom: Platform.OS === 'android' ? 100 : 40 
+  },
   title: { fontSize: 28, fontWeight: 'bold', marginTop: 60, marginBottom: 40, textAlign: 'center' },
   btn: { backgroundColor: '#6A42C2', padding: 20, borderRadius: 15 },
   btnTxt: { color: '#fff', textAlign: 'center', fontWeight: 'bold' },

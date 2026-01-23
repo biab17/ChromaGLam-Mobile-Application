@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Scr
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
+import { API_URLS } from '../../config';
+
 
 export default function ScanScreen() {
   const [loading, setLoading] = useState(false);
@@ -14,7 +16,7 @@ export default function ScanScreen() {
       const token = await SecureStore.getItemAsync('userToken');
 
       if (!token) {
-        Alert.alert("Eroare", "Sesiune expirată. Loghează-te din nou.");
+        Alert.alert("Error", "Sesion expired");
         setLoading(false);
         return;
       }
@@ -26,7 +28,7 @@ export default function ScanScreen() {
         type: 'image/jpeg',
       });
 
-      const response = await fetch('http://172.20.10.4:4000/api/items/add', {
+      const response = await fetch(`${API_URLS.ITEMS}/add`, {
         method: 'POST',
         body: formData,
         headers: {
@@ -36,15 +38,17 @@ export default function ScanScreen() {
         },
       });
 
-      if (response.status === 201) {
-        Alert.alert("Success", "item uploaded!");
+      if (response.status === 201 || response.status === 200) {
+        Alert.alert("Success", "Product saved");
       } else {
         const errorData = await response.json();
-        Alert.alert("Error", errorData.error || "Error while saving ");
+        Alert.alert("Server error", errorData.error || "Could not save the image");
       }
 
     } catch (error) {
-      Alert.alert("Eroare No conexion", "Verify if the server is on.");
+      Alert.alert(
+        "Conection error", "Can not connect to the server ");
+      console.log("Error:", error);
     } finally {
       setLoading(false);
     }
@@ -72,7 +76,7 @@ export default function ScanScreen() {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#6200ee" />
-          <Text style={styles.loadingText}>Analizăm haina cu AI...</Text>
+          <Text style={styles.loadingText}>Analizing item...</Text>
         </View>
       ) : (
         <View style={styles.buttonWrapper}>
