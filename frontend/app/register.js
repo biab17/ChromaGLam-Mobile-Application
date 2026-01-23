@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,KeyboardAvoidingView,ScrollView,Platform} from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, ScrollView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import api from "../src/api/client";
 
@@ -19,58 +19,65 @@ export default function Register() {
         password,
       });
 
-      Alert.alert("Success", "Account created!");
-      router.replace("/login");
+      if (response.data.user_id) {
+        router.push({
+          pathname: "/preferences",
+          params: { userId: response.data.user_id }
+        });
+      } else {
+        Alert.alert("Success", "Account created! Please log in.");
+        router.replace("/login");
+      }
     } catch (err) {
       Alert.alert("Error", err.response?.data?.error || "Registration failed");
     }
   }
 
-   return (
+  return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Register</Text>
+        <Text style={styles.title}>Register</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Username"
-        placeholderTextColor="#ccc"
-        value={username}
-        onChangeText={setUsername}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Username"
+          placeholderTextColor="#ccc"
+          value={username}
+          onChangeText={setUsername}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Name"
-        placeholderTextColor="#ccc"
-        value={name}
-        onChangeText={setName}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Name"
+          placeholderTextColor="#ccc"
+          value={name}
+          onChangeText={setName}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#ccc"
-        value={email}
-        onChangeText={setEmail}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor="#ccc"
+          value={email}
+          onChangeText={setEmail}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        placeholderTextColor="#ccc"
-        value={password}
-        onChangeText={setPassword}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          secureTextEntry
+          placeholderTextColor="#ccc"
+          value={password}
+          onChangeText={setPassword}
+        />
 
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Sign Up</Text>
-      </TouchableOpacity>
-       </ScrollView>
+        <TouchableOpacity style={styles.button} onPress={handleRegister}>
+          <Text style={styles.buttonText}>Sign Up</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -79,10 +86,11 @@ const purple = "#5f3fd8";
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: purple,
     justifyContent: "center",
     paddingHorizontal: 30,
+    paddingVertical: 40,
   },
   title: {
     color: "#fff",

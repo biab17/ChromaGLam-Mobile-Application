@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,KeyboardAvoidingView,ScrollView,Platform } from "react-native";
 import { useRouter } from "expo-router";
 import api from "../src/api/client";
+import * as SecureStore from 'expo-secure-store';
 
 export default function Login() {
   const router = useRouter();
@@ -15,8 +16,11 @@ export default function Login() {
         password,
       });
 
+      if (response.data.token) {
+          await SecureStore.setItemAsync("userToken", response.data.token);
+        api.defaults.headers.common["Authorization"] = `Bearer ${response.data.token}`;
       Alert.alert("Success", "Logged in!");
-
+      }
       router.replace("/home");
     } catch (err) {
       Alert.alert("Error", err.response?.data?.error || "Login failed");

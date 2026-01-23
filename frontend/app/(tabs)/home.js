@@ -1,35 +1,51 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import * as Location from "expo-location";
+import { API_URLS } from '../../config';
 
-const WEATHER_API_KEY = "715327b45d8574f75adcd6e99f743fbf"; 
 
 function generateWeatherTip(weather) {
   if (!weather) return "Enjoy your day!";
 
   const id = weather.weather?.[0]?.id;
-  const temp = weather.main?.temp;
+  const temp = Math.round(weather.main?.temp);
   const wind = weather.wind?.speed;
 
   if (!id) return "Enjoy your day!";
 
-  if (id >= 200 && id <= 232) return "Storm outside! Be careful and avoid staying outside.";
-  if (id >= 300 && id <= 321) return "Light drizzle. A light jacket could save your day.";
-  if (id >= 500 && id <= 531) return "Raining. Don't forget to get an umbrella.";
-  if (id >= 600 && id <= 622) return "Snowing. Watch out for the ice and enjoy the snowflakes!";
-  if (id >= 701 && id <= 781) return "Reduced visibility. Be careful when driving or walking.";
+  if (id >= 200 && id <= 232) return "Storm outside! Stay safe and avoid open spaces.";
 
-  if (id === 800) {
-    if (temp >= 28) return "Very hot! Stay hydrated and avoid open spaces.";
-    if (temp <= 5) return "Clear sky but cold weather. Dress warmly!";
-    return "Clear sky! Perfect weather for outside activities!";
+  if ((id >= 300 && id <= 321) || (id >= 500 && id <= 531)) {
+    if (temp <= 10) return "Cold rain. You'll need a warm waterproof coat and an umbrella.";
+    if (temp > 10 && temp <= 20) return "Chilly rain. Don't forget your umbrella and a light jacket.";
+    return "Warm rain. A light umbrella or raincoat is enough.";
   }
 
-  if (id >= 801 && id <= 804) return "Cloudy sky. Take a light jacket.";
+  if (id >= 600 && id <= 622) {
+    if (temp <= -10) return "Extreme cold and snow! Layer up with thermals and a heavy parka.";
+    return "Snowing. Watch out for ice and enjoy the winter vibes!";
+  }
 
-  if (wind > 12) return "Strong wind. Stay away from unstable objects.";
+  if (id >= 701 && id <= 781) return "Reduced visibility. Be extra careful while moving outside.";
 
-  return "No matter the weather, enjoy every moment!";
+  if (id === 800) {
+    if (temp >= 30) return "Extreme heat! Stay hydrated and avoid the sun.";
+    if (temp >= 20) return "Beautiful sunny day. Don't forget your sunglasses!";
+    if (temp <= 5) return "Clear but freezing. Dress warmly in layers.";
+    return "Clear sky! Perfect weather for a walk.";
+  }
+
+  if (id >= 801 && id <= 804) {
+    if (temp <= 5) return "Cloudy and cold. A thick winter coat is a must.";
+    if (temp > 5 && temp <= 15) return "Grey and chilly. A sweater and a jacket should do.";
+    if (temp > 15 && temp <= 25) return "Mild and cloudy. Perfect temperature for a light hoodie.";
+    return "Warm and overcast. Stay comfortable!";
+  }
+
+
+  if (wind > 12) return "Strong wind alert. Watch out for flying objects!";
+
+  return "Enjoy your day, no matter the weather!";
 }
 
 export default function Home() {
@@ -56,7 +72,7 @@ export default function Home() {
       const lat = pos.coords.latitude;
       const lon = pos.coords.longitude;
 
-      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${WEATHER_API_KEY}`;
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_URLS.WEATHER}`;
       const response = await fetch(url);
       const data = await response.json();
 
