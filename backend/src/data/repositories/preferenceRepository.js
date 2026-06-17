@@ -14,6 +14,12 @@ class PreferenceRepository {
             }
         });
     }
+
+    async getPreferencesByUserId(userId) {
+        return await prisma.preference.findUnique({
+            where: { userId: userId }
+        });
+    }
 }
 
 module.exports = new PreferenceRepository();

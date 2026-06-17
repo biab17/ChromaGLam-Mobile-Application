@@ -1,3 +1,4 @@
+const { getUnpackedSettings } = require('http2');
 const { prisma } = require('../prisma/client');
 
 class ItemRepository {
@@ -28,6 +29,33 @@ class ItemRepository {
         return await prisma.item.update({
             where: { item_id: itemId },
             data: { available: status }
+        });
+    }
+
+    async getUnavailableItemsOlderThan(userId, dateLimit) {
+        return await prisma.item.findMany({
+            where: {
+                userId: userId,
+                available: false,
+                lastWorn: { lte: dateLimit }
+            }
+        });
+    }
+
+    async getRecentlyAddedItems(userId, limit = 5) {
+        return await prisma.item.findMany({
+            where: { userId: userId },
+            orderBy: {  createdAt: 'desc' },
+            take: limit
+        });
+    }
+
+    async getAvailableItems(userId) {
+        return await prisma.item.findMany({
+            where: { 
+                userId: userId, 
+                available: true 
+            }
         });
     }
 }

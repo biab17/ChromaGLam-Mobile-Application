@@ -79,7 +79,7 @@ frontend.zip
 
 # Google Cloud Security Key
 backend/src/config/google_cloud_key.json
-
+backend/outfit_model_plan.txt
 
 ChromaGLam.zip
 

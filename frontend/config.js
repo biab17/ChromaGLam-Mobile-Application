@@ -1,4 +1,9 @@
-const BASE_URL = 'http://172.20.10.4:4000'; 
+import Constants from 'expo-constants';
+
+const hostUri = Constants.expoConfig?.hostUri || 'localhost';
+const localIp = hostUri.split(':').shift() || 'localhost'; // Fallback to localhost if hostUri is not in expected format
+
+const BASE_URL = `http://${localIp}:4000`; 
 const WEATHER_API_KEY = "715327b45d8574f75adcd6e99f743fbf";
 
 export const API_URLS = {
