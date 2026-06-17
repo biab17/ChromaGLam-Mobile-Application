@@ -1,61 +1,92 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ActivityIndicator, 
+  ScrollView, 
+  Image, 
+  FlatList 
+} from "react-native";
 import * as Location from "expo-location";
 import { API_URLS } from '../../config';
-
-
-function generateWeatherTip(weather) {
-  if (!weather) return "Enjoy your day!";
-
-  const id = weather.weather?.[0]?.id;
-  const temp = Math.round(weather.main?.temp);
-  const wind = weather.wind?.speed;
-
-  if (!id) return "Enjoy your day!";
-
-  if (id >= 200 && id <= 232) return "Storm outside! Stay safe and avoid open spaces.";
-
-  if ((id >= 300 && id <= 321) || (id >= 500 && id <= 531)) {
-    if (temp <= 10) return "Cold rain. You'll need a warm waterproof coat and an umbrella.";
-    if (temp > 10 && temp <= 20) return "Chilly rain. Don't forget your umbrella and a light jacket.";
-    return "Warm rain. A light umbrella or raincoat is enough.";
-  }
-
-  if (id >= 600 && id <= 622) {
-    if (temp <= -10) return "Extreme cold and snow! Layer up with thermals and a heavy parka.";
-    return "Snowing. Watch out for ice and enjoy the winter vibes!";
-  }
-
-  if (id >= 701 && id <= 781) return "Reduced visibility. Be extra careful while moving outside.";
-
-  if (id === 800) {
-    if (temp >= 30) return "Extreme heat! Stay hydrated and avoid the sun.";
-    if (temp >= 20) return "Beautiful sunny day. Don't forget your sunglasses!";
-    if (temp <= 5) return "Clear but freezing. Dress warmly in layers.";
-    return "Clear sky! Perfect weather for a walk.";
-  }
-
-  if (id >= 801 && id <= 804) {
-    if (temp <= 5) return "Cloudy and cold. A thick winter coat is a must.";
-    if (temp > 5 && temp <= 15) return "Grey and chilly. A sweater and a jacket should do.";
-    if (temp > 15 && temp <= 25) return "Mild and cloudy. Perfect temperature for a light hoodie.";
-    return "Warm and overcast. Stay comfortable!";
-  }
-
-
-  if (wind > 12) return "Strong wind alert. Watch out for flying objects!";
-
-  return "Enjoy your day, no matter the weather!";
-}
+import {generateWeatherTip} from '../../src/utils/weatherUtils';
 
 export default function Home() {
+  // State for weather data
   const [weather, setWeather] = useState(null);
+  // State for weather tip
   const [tip, setTip] = useState("");
+  // State for dashboard data
   const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState(null);
+  //State for items to validate
+  const [itemsToValidate, setItemsToValidate] = useState([]);
 
   useEffect(() => {
+    // Le apelăm pe amândouă la montarea componentei
     loadWeather();
+    loadDashboard();
+    loadItemsToValidate();
   }, []);
+
+  async function loadDashboard() {
+    try {
+      
+      const response = await fetch(`${API_URLS.BASE}/dashboard`);
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setDashboardData(data);
+      } else {
+        console.log("Error loading dashboard:", data);
+      }
+    } catch (err) {
+      console.log("Network error loading dashboard:", err);
+    }
+  }
+
+  async function loadItemsToValidate() {
+    try {
+      const response = await fetch(`${API_URLS.BASE}/api/items/validate`);
+      const data = await response.json();
+
+      if (response.ok) {
+        setItemsToValidate(data);
+      } else {
+        console.log("Error loading items to validate:", data);
+      }
+    } catch (err) {
+      console.log("Network error loading items to validate:", err);
+    }
+  }
+
+
+  async function handleValidation(itemId) {
+    try {
+      const response = await fetch(`${API_URLS.BASE}/api/items/make-available/${itemId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if(response.ok && data.success) {
+        setItemsToValidate(prev => prev.filter(item => item.item_id !== itemId));
+      } else {
+        console.log("Error validating item:", data);
+      }
+    } catch (err) {
+      console.log("Network error validating item:", err);
+    }
+  }
+  
+  async function handleRejection(itemId) {
+      setItemsToValidate(prev => prev.filter(item => item.item_id !== itemId));
+  }
 
   async function loadWeather() {
     try {
@@ -101,49 +132,115 @@ export default function Home() {
     );
   }
 
-  if (!weather) {
-    return (
-      <View style={styles.page}>
-        <View style={styles.header}>
-          <Text style={styles.headerText}>Home</Text>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.city}>Weather unavailable</Text>
-          <Text style={styles.desc}>Try again later.</Text>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.tipTitle}>Tip of the day</Text>
-          <Text style={styles.tip}>{tip}</Text>
-        </View>
-      </View>
-    );
-  }
+ const currentDirtyItem = itemsToValidate[0];
 
   return (
     <View style={styles.page}>
-      {/* HEADER */}
+      {/* HEADER FIX - Salutul personalizat */}
       <View style={styles.header}>
-        <Text style={styles.headerText}>Home</Text>
-      </View>
-
-      {/* WEATHER CARD */}
-      <View style={styles.card}>
-        <Text style={styles.city}>{weather.name}</Text>
-
-        <Text style={styles.temp}>{Math.round(weather.main.temp)}°C</Text>
-
-        <Text style={styles.desc}>
-          {weather.weather?.[0]?.description?.toUpperCase()}
+        <Text style={styles.headerText}>
+          {dashboardData?.userName ? `Hello, ${dashboardData.userName}!` : 'Home'}
         </Text>
       </View>
 
-      {/* TIPS CARD */}
-      <View style={styles.card}>
-        <Text style={styles.tipTitle}>Tip of the day</Text>
-        <Text style={styles.tip}>{tip}</Text>
-      </View>
+      {/* CONTINUT SCROLLABIL */}
+      <ScrollView contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
+        
+        {/* 1. WEATHER CARD */}
+        {weather ? (
+          <View style={styles.card}>
+            <Text style={styles.city}>{weather.name}</Text>
+            <Text style={styles.temp}>{Math.round(weather.main.temp)}°C</Text>
+            <Text style={styles.desc}>
+              {weather.weather?.[0]?.description?.toUpperCase()}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.card}>
+             <Text style={styles.city}>Weather unavailable</Text>
+             <Text style={styles.desc}>Try again later.</Text>
+          </View>
+        )}
+
+        {/* 2. TIPS CARD */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Tip of the day</Text>
+          <Text style={styles.tip}>{tip}</Text>
+        </View>
+
+        {/* 3. OUTFIT OF THE DAY CARD */}
+        {dashboardData?.ootd && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Outfit of the Day</Text>
+            <Image 
+              source={{ uri: dashboardData.ootd.imageUrl }} 
+              style={styles.ootdImage} 
+            />
+          </View>
+        )}
+
+        {/* 4. RECENTLY ADDED SECTION */}
+        {dashboardData?.recentlyAdded && dashboardData.recentlyAdded.length > 0 && (
+          <View style={[styles.card, { paddingRight: 0 }]}>
+            <Text style={[styles.sectionTitle, { paddingRight: 20 }]}>Recently Added</Text>
+            <FlatList
+              horizontal
+              data={dashboardData.recentlyAdded}
+              keyExtractor={(item) => item.item_id.toString()}
+              renderItem={({ item }) => (
+                <Image 
+                  source={{ uri: item.imageUrl }} 
+                  style={styles.recentImage} 
+                />
+              )}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingRight: 20 }}
+            />
+          </View>
+        )}
+
+        {/* 5. CARD NOU: POZIȚIONAT ACUM ULTIMUL (Closet Refresh / Wardrobe Status) */}
+        {currentDirtyItem ? (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>🔄 Closet Refresh</Text>
+            
+            <View style={{ flexDirection: "row", marginTop: 10 }}>
+              <Image 
+                source={{ uri: currentDirtyItem.imageUrl || currentDirtyItem.imageURL }} 
+                style={styles.recentImage} 
+              />
+              <View style={{ flex: 1, marginLeft: 15, justifyContent: "space-between" }}>
+                <Text style={styles.tip}>
+                  You wore "<Text style={{ fontWeight: 'bold' }}>{currentDirtyItem.name}</Text>" 3 days ago. Is it clean and ready to wear again?
+                </Text>
+                
+                <View style={{ flexDirection: "row", marginTop: 10 }}>
+                  <TouchableOpacity 
+                    style={{ backgroundColor: "#6A42C2", paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20, marginRight: 10 }} 
+                    onPress={() => handleMakeAvailable(currentDirtyItem.item_id)}
+                  >
+                    <Text style={{ color: "white", fontSize: 12, fontWeight: "bold" }}>Yes, it's clean</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={{ backgroundColor: "#F0EBFB", paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20 }} 
+                    onPress={() => handleKeepUnavailable(currentDirtyItem.item_id)}
+                  >
+                    <Text style={{ color: "#6A42C2", fontSize: 12, fontWeight: "600" }}>Not yet</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Wardrobe Status</Text>
+            <Text style={styles.tip}>
+              All your clothes are fresh, perfectly organized, and ready to make you shine today.
+            </Text>
+          </View>
+        )}
+
+      </ScrollView>
     </View>
   );
 }
@@ -158,6 +255,8 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   headerText: {
     fontSize: 28,
@@ -171,10 +270,10 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 14,
     shadowColor: "#000",
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.10,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 6,
-    elevation: 5,
+    elevation: 4,
   },
   city: {
     fontSize: 22,
@@ -192,14 +291,30 @@ const styles = StyleSheet.create({
     color: "#555",
     textTransform: "capitalize",
   },
-  tipTitle: {
+  sectionTitle: {
     fontSize: 20,
     fontWeight: "600",
     marginBottom: 10,
+    color: "#212529",
   },
   tip: {
     fontSize: 16,
     color: "#333",
+  },
+  ootdImage: {
+    width: '100%',
+    height: 250,
+    borderRadius: 10,
+    backgroundColor: '#EAEAEA',
+    resizeMode: 'cover',
+  },
+  recentImage: {
+    width: 110,
+    height: 110,
+    borderRadius: 10,
+    marginRight: 12,
+    backgroundColor: '#EAEAEA',
+    resizeMode: 'cover',
   },
   loadingContainer: {
     flex: 1,

@@ -21,6 +21,7 @@ model User {
   password   String
   preference Preference?
   items      Item[]
+  outfits     Outfit[]
 }
 
 model Preference {
@@ -45,7 +46,24 @@ model Item {
   thermalLevel String
   fit          String
   available    Boolean @default(true)
+  lastWorn     DateTime?
   imageURL     String
+  createdAt    DateTime @default(now())
   userId       Int
   user         User   @relation(fields: [userId], references: [user_id])
+  outfits      Outfit[]
+
+}
+
+
+model Outfit {
+  outfit_id         Int      @id @default(autoincrement())
+  createdAt         DateTime @default(now())
+  rating            Int?
+  comments          String?
+  temperature       Float
+  weatherCondition  String
+  userId            Int
+  user              User     @relation(fields: [userId], references: [user_id])
+  items             Item[] 
 }

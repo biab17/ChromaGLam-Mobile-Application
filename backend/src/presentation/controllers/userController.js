@@ -1,6 +1,5 @@
 const userService = require('../../business/services/userService');
 const jwt = require('jsonwebtoken');
-const { prisma } = require('../../data/prisma/client'); 
 
 async function register(req, res) {
   try {
@@ -44,21 +43,22 @@ async function login(req, res) {
 
 async function getProfile(req, res) {
   try {
-    const user = await prisma.user.findUnique({
-      where: { user_id: req.user.id },
-      include: {
-        preference: true 
-      }
-    });
-
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    const { password, ...userWithoutPassword } = user;
-    res.json(userWithoutPassword);
+    const user = await userService.getUserProfile(req.user.id);
+    res.json(user);
   } catch (err) {
     console.error("Error in getProfile:", err);
-    res.status(500).json({ error: "Server error fetching profile" });
+    res.status(404).json({ error: err.message });
   }
 }
 
-module.exports = { register, login, getProfile };
+async function getDashboardData(req, res) {
+  try {
+    const dashboardData = await userService.getDashboardData(req.user.id);
+    res.json(dashboardData);
+  } catch (error) {
+    console.error("Error getting dashboard data:", error);
+    res.status(500).json({ error: error.message });
+  }
+}
+
+module.exports = { register, login, getProfile, getDashboardData };

@@ -1,4 +1,3 @@
-const { prisma } = require('../../data/prisma/client');
 const bcrypt = require('bcryptjs');
 const userRepository = require('../../data/repositories/userRepository');
 
@@ -20,7 +19,7 @@ async function registerUser({ username, name, email, password }) {
 }
 
 async function loginUser({ email, password }) {
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await userRepository.findByEmail(email);
   if (!user) throw new Error("User not found");
 
   const valid = await bcrypt.compare(password, user.password);
@@ -29,7 +28,17 @@ async function loginUser({ email, password }) {
   return user;
 }
 
+async function getUserProfile(userId) {
+  return await userRepository.getUserProfile(userId);
+}
+
+async function getDashboardData(userId) {
+  return await userRepository.getDashboardData(userId);
+}
+
 module.exports = { 
   registerUser,
-  loginUser
+  loginUser,
+  getUserProfile,
+  getDashboardData
 };

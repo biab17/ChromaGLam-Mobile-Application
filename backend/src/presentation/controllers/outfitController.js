@@ -1,32 +1,22 @@
-const { prisma } = require('../../data/prisma/client');
-const aiService = require('../../business/services/aiService');
+const outfitService = require('../../business/services/outfitService');
 
 exports.getOutfitSuggestions = async (req, res) => {
   try {
-    const userIdFromToken = req.user.id; 
+    const userId = req.user.id;
     const { weather } = req.body;
 
-    const items = await prisma.item.findMany({
-      where: { 
-        userId: userIdFromToken, 
-        available: true 
-      }
-    });
-
-    const preferences = await prisma.preference.findUnique({
-      where: { userId: userIdFromToken }
-    });
-
-    if (!items.length || !preferences) {
-      return res.status(400).json({ error: "Not enough data." });
+    // Validate input
+    if (!weather) {
+      return res.status(400).json({ error: "Weather data is required" });
     }
 
-    const aiResponse = await aiService.generateOutfits(items, preferences, weather);
+    // Call service to generate outfit suggestions
+    const aiResponse = await outfitService.generateOutfitSuggestions(userId, weather);
 
     res.status(200).json(aiResponse);
 
   } catch (error) {
     console.error("Outfit Error:", error.message);
-    res.status(500).json({ error: "Error while generating the outfits." });
+    res.status(400).json({ error: error.message });
   }
 };
